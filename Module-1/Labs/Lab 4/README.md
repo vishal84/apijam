@@ -167,7 +167,7 @@ This ensures that, in the event of any API Proxy error, CORS headers are sent ba
 
      ![image alt text](./media/DeploySharedFlow.png)
 
-15. Navigate to **Admin → Environments → Flow Hooks**. Click the pencil icon on the **Pre-proxy** flow hook to edit.  Select the Shared Flow **'cors-v1'** in the dialog drop down.
+15. Navigate to **Admin → Environments → Flow Hooks**. Click the pencil icon on the **Pre-proxy** flow hook to edit.  Select the Shared Flow **'cors-v1'** in the dialog drop down and select **OK**.
 
      ![image alt text](./media/FlowHookDialog.png)
 
