@@ -159,7 +159,7 @@ This ensures that, in the event of any API Proxy error, CORS headers are sent ba
 
     ![image alt text](./media/UploadSharedFlowBundle.png)
 
-13. In the resulting file explorer dialog, select the file **'cors-v1.zip'** with the following details and click **Create**
+13. In the resulting file explorer dialog, select the file **'cors-v1.zip'** previously downloaded. Enter the following details and click **Create**
 
       Name: `cors-v1`
 
