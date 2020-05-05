@@ -126,7 +126,7 @@ Policy configuration:
 
    This flow handles CORS Preflight OPTIONS requests.
 
-8. Select 'Proxy Endpoint -> default' on the left panel. Scroll to the top of the configuration, and add the following DefaultFaultRule setting, as shown below:
+8. Select **'Proxy Endpoint -> default'** on the left panel. Scroll to the top of the configuration, and add the following [DefaultFaultRule](https://docs.apigee.com/api-platform/fundamentals/fault-handling#whatapiproxiesdowhenerrorsoccur-checkforfaultrules)  setting, as shown below:
 
    ```
    <DefaultFaultRule name="DefaultFaultRule">
