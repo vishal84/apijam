@@ -50,6 +50,8 @@ In this step, we ensure that we implement CORS support for your API Proxy, befor
 
 For further information, see "[Adding CORS support to an API proxy](https://docs.apigee.com/api-platform/develop/adding-cors-support-api-proxy)".
 
+To simplify implementation for the purposes of this lab, we will import a Shared Flow into our lab environment and attach it as a Flow Hook in our Apigee organization to enforce its behavior across all API proxies deployed.
+
 1. Navigate to **Develop → API Proxies** and select your API Proxy "{your initials}\_Hipster-Products-API". Open the **Develop** tab for this proxy, in order to edit proxy configuration.
 
     ![image alt text](./media/OpenProxyDevelop.png)
@@ -66,86 +68,52 @@ For further information, see "[Adding CORS support to an API proxy](https://docs
 ![image alt text](./media/AddRemoveAPIKeyPolicy.png)
 
   * Policy Configuration:
+   ```
+   <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+   <AssignMessage async="false" continueOnError="false" enabled="true" name="Remove-API-Key">
+      <DisplayName>Remove API Key</DisplayName>
+      <Remove>
+         <QueryParams>
+            <QueryParam name="apikey"/>
+         </QueryParams>
+      </Remove>
+      <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
+      <AssignTo createNew="false" transport="http" type="request"/>
+   </AssignMessage>
+   ```
+
+   ![image alt text](./media/AddRemoveAPIKeyPolicyConfig.png)
+
+4. Select the '+' option in the Policies left panel, to add a new policy.
+
+   ![image alt text](./media/AddPolicy.png)
+
+5. Select the Assign Message option and add the policy with the following details:
+
+Display Name: Set OPTIONS Status Code Name: Set-OPTIONS-Status-Code
+
+Policy configuration:
+
+
       ```
       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-      <AssignMessage async="false" continueOnError="false" enabled="true" name="Remove-API-Key">
-        <DisplayName>Remove API Key</DisplayName>
-        <Remove>
-          <QueryParams>
-              <QueryParam name="apikey"/>
-          </QueryParams>
-        </Remove>
-        <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
-        <AssignTo createNew="false" transport="http" type="request"/>
-      </AssignMessage>
-      ```
-
-![image alt text](./media/AddRemoveAPIKeyPolicyConfig.png)
-
-4. Select the '**+**' option in the **Policies** left panel, to add a new policy.
-
-    ![image alt text](./media/AddPolicy.png)
-
-5. Select the **Assign Message** option and add the policy with the following details:
-
-      Display Name: `Set CORS Response Headers`
-      Name: `Set-CORS-Response-Headers`
-
-   ![image alt text](./media/AddAMCORSHeaders.png)
-
-   Edit the policy configuration to the following:
-
-      ```
-       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-       <AssignMessage async="false" continueOnError="false" enabled="true" name="Set-CORS-Response-Headers">
-        <DisplayName>Set CORS Response Headers</DisplayName>
-        <FaultRules/>
-        <Properties/>
-        <Set>
-            <Headers>
-                <Header name="Access-Control-Allow-Origin">*</Header>
-                <Header name="Access-Control-Allow-Headers">origin, x-requested-with, accept, content-type</Header>
-                <Header name="Access-Control-Max-Age">3628800</Header>
-                <Header name="Access-Control-Allow-Methods">GET, PUT, POST, DELETE</Header>
-            </Headers>
-        </Set>
-        <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
-        <AssignTo createNew="false" transport="http" type="response"/>
-       </AssignMessage>
-       ```
-
-![image alt text](./media/EditAMCORSHeadersPolicy.png)
-
-6. Repeat steps 2 & 3 above add another **Assign Message** policy, with the following details:
-    
-    Display Name: `Set OPTIONS Status Code`
-    Name: `Set-OPTIONS-Status-Code`
-
-    Policy configuration:
-    ```
-    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-    <AssignMessage async="false" continueOnError="false" enabled="true" name="Set-OPTIONS-Status-Code">
+      <AssignMessage async="false" continueOnError="false" enabled="true" name="Set-OPTIONS-Status-Code">
       <DisplayName>Set OPTIONS Status Code</DisplayName>
       <Properties/>
       <AssignVariable>
-        <Name>error.status.code</Name>
-        <Value>200</Value>
+         <Name>error.status.code</Name>
+         <Value>200</Value>
       </AssignVariable>
       <IgnoreUnresolvedVariables>true</IgnoreUnresolvedVariables>
       <AssignTo createNew="false" transport="http" type="request"/>
-    </AssignMessage>
-    ```
-7. Select the **'PreFlow'** flow under **'Target Endpoint' -> 'default'** from the left panel. Then drag and drop the **'Set CORS Response Headers'** policy to the response pipeline of the flow, as shown below:
+      </AssignMessage>
+      ```
 
-   ![image alt text](./media/DragDropCORSHeadersTargetRespPreFlow.png)
-
-   This ensures that CORS headers are returned on any valid API call.
-
-8. Select the '**+**' button to add a flow to **'Proxy Endpoint' -> 'default'** on the left panel.
+6. Select the '**+**' button to add a flow to **'Proxy Endpoint' -> 'default'** on the left panel.
 
    ![image alt text](./media/AddProxyEndpointFlow.png)
 
-9. Select the **Manual** entry tab and enter the following flow details:
+7. Select the **Manual** entry tab and enter the following flow details:
    
       Flow Name: `OptionsPreFlight`
       Description: `For CORS preflight requests`
@@ -158,13 +126,21 @@ For further information, see "[Adding CORS support to an API proxy](https://docs
 
    This flow handles CORS Preflight OPTIONS requests.
 
-10. Select the **'OptionsPreFlight'** flow under **'Proxy Endpoint' -> 'default'** from the left panel. Then drag and drop the **'Set CORS Response Headers'** policy to the response pipeline of the flow, as shown below:
+8. Select 'Proxy Endpoint -> default' on the left panel. Scroll to the top of the configuration, and add the following DefaultFaultRule setting, as shown below:
 
-   ![image alt text](./media/DragDropCORSHeadersOPTIONSPreflight.png)
+   ```
+   <DefaultFaultRule name="DefaultFaultRule">
+      <Step>
+         <Name>Set-OPTIONS-Status-Code</Name>
+         <Condition>request.verb = "OPTIONS"</Condition>
+      </Step>
+      <AlwaysEnforce>true</AlwaysEnforce>
+   </DefaultFaultRule>
+   ```
 
-   This ensures that CORS headers are returned on CORS Preflight OPTIONS requests.
+This ensures that, in the event of any API Proxy error, CORS headers are sent back correctly, and CORS Preflight OPTIONS requests are always handled. Eg. When API Key validation fails.
 
-11. Select **'Proxy Endpoint -> default'** on the left panel. Scroll down to the bottom of the configuration, and add the following [RouteRule](https://docs.apigee.com/api-platform/fundamentals/understanding-routes#determiningtheurlofthetargetendpoint) setting before the 'default' rule, as shown below:
+9. Select **'Proxy Endpoint -> default'** on the left panel. Scroll down to the bottom of the configuration, and add the following [RouteRule](https://docs.apigee.com/api-platform/fundamentals/understanding-routes#determiningtheurlofthetargetendpoint) setting before the 'default' rule, as shown below:
 
    ![image alt text](./media/OPTIONSRouteRule.png)
 
@@ -175,24 +151,29 @@ For further information, see "[Adding CORS support to an API proxy](https://docs
     ```
    This RouteRule ensures that CORS Preflight OPTIONS requests are not forwarded to the API target service.
 
-12. Select **'Proxy Endpoint -> default'** on the left panel. Scroll to the top of the configuration, and add the following [DefaultFaultRule](https://docs.apigee.com/api-platform/fundamentals/fault-handling#creatingfaultrules-creatingadefaultfaultrule) setting, as shown below:
+10. Click **Save**.
 
-    ```
-    <DefaultFaultRule name="DefaultFaultRule">
-        <Step>
-            <Name>Set-CORS-Response-Headers</Name>
-        </Step>
-        <Step>
-            <Name>Set-OPTIONS-Status-Code</Name>
-            <Condition>request.verb = "OPTIONS"</Condition>
-        </Step>
-        <AlwaysEnforce>true</AlwaysEnforce>
-    </DefaultFaultRule>
-    ```
-   
-   This ensures that, in the event of any API Proxy error, CORS headers are sent back correctly, and CORS Preflight OPTIONS requests are always handled. Eg. When API Key validation fails.
+11. Navigate to **Develop → Shared Flows**. You will need to download the following zip bundle locally prior to the next steps. [*CORS-v1 Shared Flow Bundle*](../../Resources/cors-v1.zip)
 
-13. Click **Save**.
+12. Click the **+Shared Flow** button in the top right corner of the screen and select **Upload bundle...**.  
+
+    ![image alt text](./media/UploadSharedFlowBundle.png)
+
+13. In the resulting file explorer dialog, select the file **'cors-v1.zip'** with the following details and click **Create**
+
+      Name: `cors-v1`
+
+14. Navigate to **Develop → Shared Flows** and select **'cors-v1**. From the top menu click the **Deploy** dropdown and select the **test** environment to deploy.
+
+     ![image alt text](./media/DeploySharedFlow.png)
+
+15. Navigate to **Admin → Environments → Flow Hooks**. Click the pencil icon on the **Pre-proxy** flow hook to edit.  Select the Shared Flow **'cors-v1'** in the dialog drop down.
+
+     ![image alt text](./media/FlowHookDialog.png)
+
+16. Repeat the same procedure for the **Post-proxy** flow hook. The result of the above steps should look as follow:
+
+     ![image alt text](./media/FlowHookConfiguration.png)
 
 ## Update the Open API Spec
 
